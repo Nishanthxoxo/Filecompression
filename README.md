@@ -4,53 +4,45 @@ Course: Data Structures and Algorithms
 
 Date: 23.3.2025
 
-Introduction
+Introduction  
 This repository contains a C program for compressing or decompressing a text file using Huffman compression.
 
-Code Overview
+Code Overview  
 The program is divided into two files:
 
-hcompress.c: This file contains the main function and methods for encoding and decoding files using Huffman coding.
+- hcompress.c: This file contains the main function and methods for encoding and decoding files using Huffman coding.  
+- linkedList.c and linkedList.h: These files contain the implementation and header for a linked list data structure used in the Huffman tree construction.  
 
-linkedList.c and linkedList.h: These files contain the implementation and header for a linked list data structure used in the Huffman tree construction.
+Usage  
 
-Usage
-Compilation
-Compile the program using "gcc" with all warnings turned on (-Wall flag) on a Linux operating system.
+Compilation  
+Compile the program using "gcc" with all warnings turned on (-Wall flag) on a Linux operating system.  
 
-bash
-Copy
-Edit
-gcc -Wall -o hcompress hcompress.c linkedList.c
-Compression
-To compress a file:
+gcc -Wall -o hcompress hcompress.c linkedList.c  
 
-bash
-Copy
-Edit
-hcompress -e filename
-This creates a compressed file called filename.huf.
+Compression  
+To compress a file:  
 
-Decompression
-To decompress a compressed file:
+hcompress -e filename  
 
-bash
-Copy
-Edit
-hcompress -d filename.huf
-This creates a decompressed file called filename.huf.dec.
+This creates a compressed file called filename.huf.  
 
-Huffman Compression/Decompression
-The core functionality of the program revolves around Huffman coding, a technique for lossless data compression.
+Decompression  
+To decompress a compressed file:  
 
-Encoding
-greateFreqTable: This method reads a text file and counts all the characters in the file, and returns a table of struct tnodes in an array as the leaf nodes of the Huffman tree.
+hcompress -d filename.huf  
 
-createHuffmanTree: Constructs the Huffman tree from the frequency table using a linked list.
+This creates a decompressed file called filename.huf.dec.  
 
-encodeFile: Encodes a given file using Huffman coding based on the constructed tree.
+Huffman Compression/Decompression  
+The core functionality of the program revolves around Huffman coding, a technique for lossless data compression.  
 
-Decoding
-decodeFile: Decodes a compressed file using Huffman coding based on the constructed tree.
+Encoding  
+- greateFreqTable: This method reads a text file and counts all the characters in the file, and returns a table of struct tnodes in an array as the leaf nodes of the Huffman tree.  
+- createHuffmanTree: Constructs the Huffman tree from the frequency table using a linked list.  
+- encodeFile: Encodes a given file using Huffman coding based on the constructed tree.  
 
-These methods allow for efficient compression and decompression of text files while maintaining lossless data integrity.
+Decoding  
+- decodeFile: Decodes a compressed file using Huffman coding based on the constructed tree.  
+
+These methods allow for efficient compression and decompression of text files while maintaining lossless data integrity.  
