@@ -1,139 +1,182 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "linkedList.c"
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-typedef struct tnode {
-    char c;
-    int freqCount;
-    struct tnode *left, *right, *parent;
-} tnode;
-
-typedef struct ListNode {
-    tnode* treeNode;
-    struct ListNode* next;
-} ListNode;
-
-tnode* generateFreqTable(char* filename);
-tnode* createHuffmanTree(tnode* freqTable);
-void encodeFile(char* filename, tnode* leafNodes);
-void decodeFile(char* filename, tnode* root);
-ListNode* list_add_in_order(ListNode* head, tnode* newNode);
-tnode* removeFirst(ListNode** head);
-
-tnode* generateFreqTable(char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (!file) return NULL;
-    tnode* arrHist = calloc(128, sizeof(tnode));
-    if (!arrHist) { fclose(file); return NULL; }
-
-    for (int i = 0; i < 128; i++) {
-        arrHist[i].c = i;
-        arrHist[i].freqCount = 0;
-    }
-
-    int temp;
-    while ((temp = fgetc(file)) != EOF) arrHist[temp].freqCount++;
-    fclose(file);
-    return arrHist;
-}
-
-tnode* createHuffmanTree(tnode* leafNodes) {
-    ListNode* head = NULL;
-    for (int i = 0; i < 128; i++) 
-        if (leafNodes[i].freqCount > 0) head = list_add_in_order(head, &leafNodes[i]);
-
-    while (head && head->next) {
-        tnode* parent = malloc(sizeof(tnode));
-        tnode* first = removeFirst(&head);
-        tnode* second = removeFirst(&head);
-
-        parent->c = '*';
-        parent->freqCount = first->freqCount + second->freqCount;
-        parent->left = first; parent->right = second;
-        first->parent = parent; second->parent = parent;
-
-        head = list_add_in_order(head, parent);
-    }
-    return removeFirst(&head);
-}
-
-void encodeFile(char* filename, tnode* leafNodes) {
-    FILE* inFile = fopen(filename, "r");
-    if (!inFile) return;
-    FILE* outFile = fopen("output.huf", "wb");
-    if (!outFile) { fclose(inFile); return; }
-
-    int currBits[60], bit = 0; unsigned char byte = 0;
-    int letter;
-    while ((letter = fgetc(inFile)) != EOF) {
-        tnode* curr = &leafNodes[letter]; int count = 0;
-        memset(currBits, 0, sizeof(currBits));
-        while (curr->parent) { currBits[count++] = (curr->parent->right == curr); curr = curr->parent; }
-        for (int i = count - 1; i >= 0; i--) {
-            byte |= currBits[i] << (7 - bit);
-            if (++bit == 8) { fwrite(&byte, 1, 1, outFile); bit = 0; byte = 0; }
-        }
-    }
-    if (bit) fwrite(&byte, 1, 1, outFile);
-    fclose(inFile); fclose(outFile);
-}
-
-void decodeFile(char* filename, tnode* treeRoot) {
-    FILE* file = fopen(filename, "rb");
-    if (!file) return;
-    FILE* newFile = fopen("decoded.txt", "w");
-    if (!newFile) { fclose(file); return; }
-
-    fseek(file, 0, SEEK_END); int byteCount = ftell(file); fseek(file, 0, SEEK_SET);
-    tnode* temp = treeRoot; char byte = fgetc(file), currentBit; int bit = 0;
-    for (int i = 0; i < byteCount * 8; i++) {
-        currentBit = (byte >> (7 - bit)) & 1;
-        temp = (currentBit == 0) ? temp->left : temp->right;
-        if (++bit == 8) { byte = fgetc(file); bit = 0; }
-        if (!temp->left && !temp->right) { fputc(temp->c, newFile); temp = treeRoot; }
-    }
-    fclose(file); fclose(newFile);
-}
-
-ListNode* list_add_in_order(ListNode* head, tnode* newNode) {
-    ListNode* newElem = malloc(sizeof(ListNode));
-    newElem->treeNode = newNode;
-    newElem->next = NULL;
-
-    if (!head || head->treeNode->freqCount >= newNode->freqCount) {
-        newElem->next = head;
-        return newElem;
-    }
-
-    ListNode* current = head;
-    while (current->next && current->next->treeNode->freqCount < newNode->freqCount) 
-        current = current->next;
-
-    newElem->next = current->next;
-    current->next = newElem;
-    return head;
-}
-
-tnode* removeFirst(ListNode** head) {
-    if (!*head) return NULL;
-    ListNode* temp = *head;
-    tnode* node = temp->treeNode;
-    *head = (*head)->next;
-    free(temp);
-    return node;
-}
+struct tnode* generateFreqTable(char* filename);
+struct tnode* createHuffmanTree(struct tnode* freqTable);
+void encodeFile(char* filename, struct tnode* leafnodes);
+void decodeFile(char* filename, struct tnode* root);
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) return 1;
 
-    tnode* leafNodes = generateFreqTable(argv[2]);
-    if (!leafNodes) return 1;
-    tnode* treeRoot = createHuffmanTree(leafNodes);
-    if (!treeRoot) return 1;
+  // Check the make sure the input parameters are correct
 
-    (strcmp(argv[1], "-e") == 0) ? encodeFile(argv[2], leafNodes) : decodeFile(argv[2], treeRoot);
+   if (argc != 3) {
+      printf("Error: The correct format is \"hcompress -e filename\" or \"hcompress -d filename.huf\"\n"); fflush(stdout);
 
-    free(leafNodes);
-    return 0;
+    exit(1);
+
+  }
+
+  // Create the frequency table by reading the generic file
+
+  struct tnode* leafNodes = generateFreqTable("decind.txt");
+
+  // Create the huffman tree from the frequency table
+
+  struct tnode* treeRoot = createHuffmanTree(leafNodes);
+
+  // encode
+
+  if (strcmp(argv[1], "-e") == 0) {
+
+    // Pass the leafNodes since it will process bottom up
+
+    encodeFile(argv[2], leafNodes);
+
+  } else { // decode
+
+    // Pass the tree root since it will process top down
+
+    decodeFile(argv[2], treeRoot);
+
+  }
+
+  return 0;
+
+}
+ tnode* generateFreqTable(char* filename){
+   // opening file
+   FILE* file = fopen(filename, "r");
+
+   //allocating array of 128 tnodes
+   tnode* arrHist = (tnode*)malloc(128*sizeof(tnode));
+   //setting coresseponding ascii code 
+   for(int i = 0; i<128; i++){
+     (arrHist+i)->c = i;
+     (arrHist+i)->freqCount = 0;
+   }
+   //reading character
+   int temp = fgetc(file);
+   while(temp != -1){
+     (arrHist+temp)->freqCount++;
+     temp = fgetc(file);
+   }
+   return arrHist;
+ }
+
+tnode* createHuffmanTree(tnode* leafNode){
+
+  //linked list is made to store nodes of huffman tree
+  LinkedList* ll = llCreate();
+  //leaf node is added to link lost in order of increasing freq count
+  for (int p = 0; p < 128; p++) {
+    list_add_in_order(&ll, &leafNode[p]);
+  }
+  while(ll->next != NULL){
+    tnode* parent = (tnode*)malloc(1*sizeof(tnode));
+    tnode* first = removeFirst(&ll);
+    tnode* second = removeFirst(&ll);
+    //parent node created with sum of two children
+    int sum = ((first->freqCount)+(second->freqCount));
+    parent->c = '*';
+    parent->freqCount = sum;
+    parent->left = first;
+    parent->right = second;
+    first->parent = parent;
+    second->parent = parent;
+    //adding parent back into list in order
+    list_add_in_order(&ll, parent);
+  }
+  tnode* root = removeFirst(&ll);
+  return root;
+}
+
+
+// Encode the input file using Huffman coding and write the output to a binary file
+void encodeFile(char* filename, struct tnode* leafNode) {
+  FILE* inFile = fopen(filename, "r");
+  if (inFile == NULL) {
+    perror("Error opening input file");
+    exit(EXIT_FAILURE);
+  }
+  //creating output file
+  FILE* outFile = fopen("decind.txt.huf", "wb");
+  if (outFile == NULL) {
+    perror("Error opening output file");
+    exit(EXIT_FAILURE);
+  }
+
+  //variables to hold the binary code
+  int currBits[60];
+  int bit = 0;
+  unsigned char byte = 0;
+  int letter = fgetc(inFile);
+  while(letter != EOF) {
+    struct tnode* curr = &leafNode[letter];
+    int count = 0;
+    memset(currBits, 0, sizeof(currBits)); // Initialize currBits to all zeros
+    while(curr->parent != NULL) {
+      if(curr->parent->left == curr) {
+        currBits[count] = 0;
+      } else {
+        currBits[count] = 1;
+      }
+      count++;
+      curr = curr->parent;
+    }
+    for(int i = count - 1; i >= 0; i--) {
+      byte |= currBits[i] << (7 - bit);
+      bit++;
+      if(bit == 8) {
+        fwrite(&byte, sizeof(unsigned char), 1, outFile);
+        bit = 0;
+        byte = 0;
+      }
+    }
+    letter = fgetc(inFile);
+  }
+  if(bit != 0) {
+    fwrite(&byte, sizeof(unsigned char), 1, outFile);
+  }
+
+  fclose(inFile);
+  fclose(outFile);
+}
+
+//takes filename and root tnode as parameters
+//decodes the huffman-encoded file
+void decodeFile(char* filename, struct tnode* treeRoot){
+  struct tnode* temp = treeRoot; // temp pointer to root node. traverse tree while decoding file
+    FILE* file = fopen(filename,"rb");
+    char byte = fgetc(file);
+    char currentBit = 0;
+    int bit = 0;
+    FILE* newFile = fopen("decind.huf.txt", "w");
+    fseek(file, 0, SEEK_END);//moves file pointer to end of file to get total # of bytes in file
+    int byteCount = ftell(file); //total # of bytes in file
+    fseek(file, 0, SEEK_SET);//moves pointer back to beginning of file
+
+    for(int i=0; i < byteCount * 8; i++){
+        currentBit = (byte >> (7-bit)) & 1;
+        bit++;
+        if(currentBit == 0){
+            temp = temp->left;
+        }
+        else{
+            temp = temp->right;
+        }
+        if(bit == 8){
+            byte = fgetc(file);
+            bit = 0;
+        }
+        if(temp->left == NULL && temp->right == NULL){
+            fputc(temp->c, newFile);
+            temp = treeRoot;
+        }
+    }
 }
