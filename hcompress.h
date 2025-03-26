@@ -1,3 +1,4 @@
+
 #include "linkedlist.h"
 
 struct tnode* generateFreqTable(char* filename);

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 struct tnode* generateFreqTable(char* filename);
 struct tnode* createHuffmanTree(struct tnode* freqTable);
 void encodeFile(char* filename, struct tnode* leafnodes);
@@ -115,6 +116,7 @@ void encodeFile(char* filename, struct tnode* leafNode) {
   int currBits[60];
   int bit = 0;
   unsigned char byte = 0;
+
   int letter = fgetc(inFile);
   while(letter != EOF) {
     struct tnode* curr = &leafNode[letter];
@@ -147,6 +149,7 @@ void encodeFile(char* filename, struct tnode* leafNode) {
   fclose(inFile);
   fclose(outFile);
 }
+
 
 //takes filename and root tnode as parameters
 //decodes the huffman-encoded file
